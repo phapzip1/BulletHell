@@ -133,10 +133,9 @@ GameObject:
   - component: {fileID: 7392014919068647467}
   - component: {fileID: 8713986677259878865}
   - component: {fileID: 573662388016163043}
-  - component: {fileID: 8199290038655357851}
   m_Layer: 6
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -401,16 +400,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Speed: 3
   RotateSpeed: 10
---- !u!114 &8199290038655357851
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2682666763163224591}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00e37679905fdba42aef943b340c9697, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MaxHealthPoint: 10

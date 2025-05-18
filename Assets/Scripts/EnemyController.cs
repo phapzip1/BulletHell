@@ -2,47 +2,30 @@ using System.Collections.Generic;
 using Phac.Utility;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UIElements;
+using Phac.State;
 
 namespace Phac.Controller
 {
-    public enum EnemyState
-    {
-        None,
-        Idle,
-        Running,
-        Attacking
-    }
     public class EnemyController : MonoBehaviour
     {
-        [SerializeField] private Transform Player;
-        [SerializeField] private LayerMask PlayerMask;
-        public float AttackRadius = 10.0f;
         private NavMeshAgent m_Agent;
-        private EnemyState m_State;
+        private EnemyDetector m_EnemyDetector;
+        private StateMachine m_StateMachine;
         private List<Timer> m_Timers;
-        private CountdownTimer m_AttackCooldown;
+        public CountdownTimer AttackCooldown { get; private set; }
 
         private void Awake()
         {
             m_Agent = GetComponent<NavMeshAgent>();
-            m_Agent.stoppingDistance = AttackRadius;
-            m_State = EnemyState.None;
-            m_AttackCooldown = new CountdownTimer(0.5f);
+            m_EnemyDetector = GetComponent<EnemyDetector>();
+            AttackCooldown = new CountdownTimer(0.5f);
             m_Timers = new List<Timer>(1)
             {
-                m_AttackCooldown,
+                AttackCooldown,
             };
-        }
 
-        private void OnDisable()
-        {
-            m_State = EnemyState.None;
-        }
-
-        private void OnEnable()
-        {
-            m_State = EnemyState.Idle;
+            // m_Agent.stoppingDistance = m_EnemyDetector.AttackRange;
+            SetupStateMachine();
         }
 
         private void FixedUpdate()
@@ -51,59 +34,27 @@ namespace Phac.Controller
             {
                 timer.Tick(Time.fixedDeltaTime);
             }
+            m_StateMachine.FixedUpdate();
         }
 
-        private void Update()
+        private void Update() => m_StateMachine.Update();
+
+        private void SetupStateMachine()
         {
+            m_StateMachine = new StateMachine();
 
-            if (m_Agent.destination != Player.position)
-            {
-                m_Agent.ResetPath();
-                m_Agent.SetDestination(Player.position);
-            }
+            EnemyAttackState attack = new EnemyAttackState(this, m_Agent, m_EnemyDetector.PlayerTransform);
+            EnemyChaseState chase = new EnemyChaseState(this, m_Agent, m_EnemyDetector.PlayerTransform);
 
-            switch (m_State)
-            {
-                case EnemyState.Idle:
-                    if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
-                    {
-                        m_State = EnemyState.Attacking;
-                    }
-                    else
-                    {
-                        m_State = EnemyState.Running;
-                    }
-                    break;
-                case EnemyState.Running:
-                    if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
-                    {
-                        m_State = EnemyState.Attacking;
-                    }
-                    break;
-                case EnemyState.Attacking:
-                    if (m_Agent.remainingDistance > m_Agent.stoppingDistance)
-                    {
-                        m_State = EnemyState.Running;
-                    }
-                    else
-                    {
-                        Vector3 lookDir = Player.position - transform.position;
-
-                        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(lookDir), Time.deltaTime * m_Agent.angularSpeed);
-
-                        // Debug.DrawLine(point, point + transform.forward, Color.red);
-                        if (m_AttackCooldown.IsFinished)
-                        {
-                            ProjectileManager.Instance.Spawn(transform.position + 0.8f * transform.forward, transform.rotation);
-                            m_AttackCooldown.Reset();
-                            m_AttackCooldown.Start();
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
+            m_StateMachine.At(chase, attack, new FuncPredicate(() => m_EnemyDetector.CanAttackPlayer()));
+            m_StateMachine.At(attack, chase, new FuncPredicate(() => !m_EnemyDetector.CanAttackPlayer()));
+            m_StateMachine.SetState(chase);
         }
 
+
+        public void Attack()
+        {
+            
+        }
     }
 }

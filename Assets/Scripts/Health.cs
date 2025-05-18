@@ -7,7 +7,6 @@ namespace Phac
     {
         [SerializeField] private float MaxHealthPoint = 10.0f;
         public Observer<float> CurrentHP;
-
         private void Awake()
         {
             CurrentHP = new Observer<float>(MaxHealthPoint);
@@ -16,6 +15,7 @@ namespace Phac
         private void OnEnable()
         {
             CurrentHP.AddListener(OnHealthChanged);
+
         }
 
         private void OnDisable()
@@ -23,14 +23,17 @@ namespace Phac
             CurrentHP.RemoveAllListener();
         }
 
-        public void ResetHealthPoint() {
+        public void ResetHealthPoint()
+        {
             CurrentHP.Value = MaxHealthPoint;
         }
-        
-        public void OnHealthChanged(float health) {
-            if (health <= 0.0f) {
+
+        public void OnHealthChanged(float health)
+        {
+            if (health <= 0.0f)
+            {
                 Destroy(gameObject);
-            } 
+            }
         }
     }
 }
