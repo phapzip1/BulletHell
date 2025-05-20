@@ -1,3 +1,4 @@
+using Phac.Controller;
 using Phac.Utility;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -28,11 +29,9 @@ namespace Phac.Spawner
         {
             if (m_SpawnTimer.IsFinished)
             {
-                int index = Random.Range(0, SpawnPoints.Length);
 
-                GameObject enemy = m_Pool.Get();
 
-                enemy.transform.position = new Vector3(SpawnPoints[index].x, 0.0f, SpawnPoints[index].y);
+                Spawn();
                 m_SpawnTimer.Reset();
                 m_SpawnTimer.Start();
             }
@@ -44,6 +43,24 @@ namespace Phac.Spawner
         }
 
         #region Helpers and Methods
+        private void Spawn()
+        {
+            int index = Random.Range(1, SpawnPoints.Length);
+            GameObject enemy = m_Pool.Get();
+
+            enemy.transform.position = new Vector3(SpawnPoints[index].y, 1.09f, SpawnPoints[index].y);
+
+            if (enemy.TryGetComponent(out EnemyController controller))
+            {
+                controller.Initialize();
+            }
+
+            if (enemy.TryGetComponent(out Damageable hurt))
+            {
+                hurt.Initialize(OnDied);
+            }
+        }
+
         private GameObject OnCreate()
         {
             GameObject gameObj = Instantiate(EnemyPrefab, transform.position, transform.rotation);
@@ -56,6 +73,14 @@ namespace Phac.Spawner
         private void OnReturn(GameObject instance) => instance.SetActive(false);
 
         private void OnDispose(GameObject instance) => Destroy(instance);
+        
+        private void OnDied(GameObject obj)
+        {
+            if (obj != null)
+            {
+                m_Pool.Release(obj);
+            }
+        }
 
         #endregion
     }

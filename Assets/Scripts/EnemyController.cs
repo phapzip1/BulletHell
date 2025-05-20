@@ -3,6 +3,7 @@ using Phac.Utility;
 using UnityEngine;
 using UnityEngine.AI;
 using Phac.State;
+using Phac.UI;
 
 namespace Phac.Controller
 {
@@ -18,13 +19,13 @@ namespace Phac.Controller
         {
             m_Agent = GetComponent<NavMeshAgent>();
             m_EnemyDetector = GetComponent<EnemyDetector>();
+
             AttackCooldown = new CountdownTimer(0.5f);
             m_Timers = new List<Timer>(1)
             {
                 AttackCooldown,
             };
 
-            // m_Agent.stoppingDistance = m_EnemyDetector.AttackRange;
             SetupStateMachine();
         }
 
@@ -37,7 +38,13 @@ namespace Phac.Controller
             m_StateMachine.FixedUpdate();
         }
 
+
         private void Update() => m_StateMachine.Update();
+
+        public void Initialize()
+        {
+            AttackCooldown.Reset();
+        }
 
         private void SetupStateMachine()
         {

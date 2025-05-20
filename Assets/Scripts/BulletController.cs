@@ -1,4 +1,4 @@
-using Phac.Scriptable;
+using System;
 using UnityEngine;
 
 
@@ -6,51 +6,60 @@ namespace Phac
 {
     public class BulletController : MonoBehaviour
     {
-        public Vector3 Origin;
-        private TrailRenderer m_TrailRenderer;
+        private Vector3 m_Origin;
         private float m_Life;
-        private BulletConfig m_Config;
+        private float m_HitBoxRadius = 0.1f;
+        private LayerMask m_CollisionMask;
+        public Action<GameObject, RaycastHit> m_OnCollision;
+        public Action<GameObject> m_OnEnd;
 
         void Awake()
         {
-            m_TrailRenderer = GetComponent<TrailRenderer>();
             m_Life = 0.0f;
         }
 
-        private void OnDisable()
+        private void Update()
         {
-   
-            m_TrailRenderer.Clear();
-        }
-
-        public bool Move(LayerMask collisionMask, out RaycastHit hits)
-        {
-            Vector3 movement = Time.deltaTime * m_Config.Speed * transform.forward;
-
-            if (Physics.Raycast(transform.position, movement, out hits, movement.magnitude, collisionMask))
+            if (m_Life <= 0.0f)
             {
-                m_Life = 0.0f;
-                return true;
+                m_OnEnd.Invoke(gameObject);
+                return;
+            }
+
+            Vector3 movement = Time.deltaTime * 10.0f * transform.forward;
+
+            if (Physics.SphereCast(transform.position, m_HitBoxRadius, movement.normalized, out RaycastHit hit, movement.magnitude, m_CollisionMask))
+            {
+                m_OnCollision.Invoke(gameObject, hit);
+
+                if (hit.collider.gameObject.TryGetComponent(out Damageable hurt))
+                {
+                    hurt.TakeDamage(2.0f);
+                }
             }
 
             transform.position += movement;
-            m_Life -= Time.deltaTime;
 
+            m_Life -= Time.deltaTime;
             if (m_Life <= 0.0f)
             {
-                return true;
+                m_OnEnd.Invoke(gameObject);
             }
-
-            return false;
         }
-
-        public void Initialize(BulletConfig config, Vector3 position, Quaternion rotation)
+        public void Initialize(
+            Vector3 position,
+            Quaternion rotation,
+            LayerMask mask,
+            Action<GameObject, RaycastHit> collisionCallback,
+            Action<GameObject> onEndCallback
+            )
         {
-            m_Config = config;
             transform.SetPositionAndRotation(position, rotation);
-            m_Config.SetupTrail(m_TrailRenderer);
-            Origin = position;
-            m_Life = config.LifeTime;
+            m_Origin = position;
+            m_CollisionMask = mask;
+            m_OnCollision = collisionCallback;
+            m_OnEnd = onEndCallback;
+            m_Life = 10.0f;
         }
     }
 }
